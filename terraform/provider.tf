@@ -7,7 +7,7 @@ terraform {
   }
 
   backend "s3" {
-    bucket = "python-development-environment"
+    bucket = "recommendation-engine"
     key    = "dev/terraform.tfstate"
     region = "eu-north-1"
   }

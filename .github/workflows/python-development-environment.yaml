@@ -1,6 +1,6 @@
-name: python-development-environment
+name: recommendation-engine
 
-run-name: ${{ github.actor }} is building python-development-environment 🚀
+run-name: ${{ github.actor }} is building recommendation-engine 🚀
 
 on:
   push:
@@ -21,7 +21,7 @@ on:
 
 jobs:
   build-and-push-images:
-    name: Build python-development-environment
+    name: Build recommendation-engine
     runs-on: ubuntu-latest
     permissions:
       packages: write
@@ -69,8 +69,8 @@ jobs:
       uses: docker/metadata-action@v3
       with:
         images: |
-          ${{ secrets.DOCKER_HUB_USERNAME }}/python-development-environment
-          ghcr.io/${{ secrets.DOCKER_HUB_USERNAME }}/python-development-environment
+          ${{ secrets.DOCKER_HUB_USERNAME }}/recommendation-engine
+          ghcr.io/${{ secrets.DOCKER_HUB_USERNAME }}/recommendation-engine
         flavor: |
           latest=false
         tags: |

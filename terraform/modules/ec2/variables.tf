@@ -11,11 +11,11 @@ variable "subnets" {
 variable "ec2_names" {
     description = "EC2 names"
     type = list(string)
-    default = ["python-development-environment1"] # e.g ["python-development-environment1", "python-development-environment2"]
+    default = ["recommendation-engine1"] # e.g ["recommendation-engine1", "recommendation-engine2"]
 }
 
 variable "key_name" {
-  description = "Key name for python-development-environment EC2"
+  description = "Key name for recommendation-engine EC2"
   type = string
 }
 
