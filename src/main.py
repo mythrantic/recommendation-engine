@@ -32,7 +32,7 @@ async def recomend_manga(title: str = Query(..., example="Apocalyptic Thief"), s
 
 
 @app.get("/api/movies")
-async def recomend_movie(title: str = Query(..., example="Apocalyptic Thief"), size: Optional[int] = 1)
+async def recomend_movie(title: str = Query(..., example="Rogue One: A Star Wars Story (2016)"), size: Optional[int] = 1):
     search_results = await recomend_movies(title=title, size=size)
     return search_results
 

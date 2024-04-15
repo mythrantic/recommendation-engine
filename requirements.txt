@@ -13,3 +13,5 @@ opencv-python
 lancedb
 pandas
 pytest
+numpy
+colorama

@@ -2,22 +2,37 @@ import lancedb
 
 import numpy as np
 import pandas as pd
-import pytest
-import subprocess
-from main import get_recommendations, data
-import main
 
-# DOWNLOAD ======================================================
-
-subprocess.Popen(
-    "curl https://files.grouplens.org/datasets/movielens/ml-latest-small.zip -o movie-data.zip", shell=True).wait()
-subprocess.Popen("unzip movie-data.zip", shell=True).wait()
-
-# TESTING ======================================================
+global data
+data = []
+global table
+table = None
 
 
-def test_main():
-    ratings = pd.read_csv('./movie-data/ratings.csv', header=None,
+def get_recommendations(title):
+    pd_data = pd.DataFrame(data)
+    # Table Search
+    result = table.search(
+        pd_data[pd_data['title'] == title]["vector"].values[0]).limit(5).to_pandas()
+
+    # Get IMDB links
+    links = pd.read_csv('./files/links.csv', header=0,
+                        names=["movie id", "imdb id", "tmdb id"], converters={'imdb id': str})
+
+    ret = result['title'].values.tolist()
+    # Loop to add links
+    for i in range(len(ret)):
+        link = links[links['movie id'] ==
+                     result['id'].values[i]]["imdb id"].values[0]
+        link = "https://www.imdb.com/title/tt" + link
+        ret[i] = [ret[i], link]
+    return ret
+
+
+if __name__ == "__main__":
+
+    # Load and prepare data
+    ratings = pd.read_csv('./files/ratings.csv', header=None,
                           names=["user id", "movie id", "rating", "timestamp"])
     ratings = ratings.drop(columns=['timestamp'])
     ratings = ratings.drop(0)
@@ -36,10 +51,11 @@ def test_main():
     print(vectors.shape)
 
     # Metadata
-    movies = pd.read_csv('./movie-data/movies.csv', header=0,
+    movies = pd.read_csv('./files/movies.csv', header=0,
                          names=["movie id", "title", "genres"])
     movies = movies[movies['movie id'].isin(reviewmatrix.columns)]
 
+    data = []
     for i in range(len(movies)):
         data.append({"id": movies.iloc[i]["movie id"], "title": movies.iloc[i]
                     ['title'], "vector": vectors[i], "genre": movies.iloc[i]['genres']})
@@ -49,9 +65,9 @@ def test_main():
 
     db = lancedb.connect("./data/test-db")
     try:
-        main.table = db.create_table("movie_set", data=data)
+        table = db.create_table("movie_set", data=data)
     except:
-        main.table = db.open_table("movie_set")
+        table = db.open_table("movie_set")
 
     print(get_recommendations("Moana (2016)"))
     print(get_recommendations("Rogue One: A Star Wars Story (2016)"))
