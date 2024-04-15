@@ -52,6 +52,6 @@ resource "aws_security_group" "sg" {
   }
 
   tags = {
-    Name = "Mypython-development-environmentSecurityGroup"
+    Name = "Myrecommendation-engineSecurityGroup"
   }
 }
