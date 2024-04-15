@@ -1,9 +1,13 @@
 import requests
 import csv
+import os
+
+allowed_origins = os.getenv("POCKETBASE_URL", "")
+
 
 # Replace these with your actual PocketBase URL and auth token
-POCKETBASE_URL = 'https://animevariant.fly.dev'
-AUTH_TOKEN = '12345678'
+POCKETBASE_URL = os.getenv("POCKETBASE_URL", "http://localhost:8080")
+AUTH_TOKEN = os.getenv("AUTH_TOKEN", "12345678")
 
 # Headers for authenticated requests
 HEADERS = {
