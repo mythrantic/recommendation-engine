@@ -1,8 +1,10 @@
-from typing import Optional
+from typing import Optional, List
+
 import debugpy
 from prometheus_fastapi_instrumentator import Instrumentator
 from fastapi import FastAPI, Query
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from dotenv import load_dotenv
 import os
 import pandas as pd
@@ -34,6 +36,7 @@ def read_root():
     return {"Hello": "World ass wiper"}
 
 
+
 @app.get("/api/manga")
 async def recomend_manga(title: str = Query(..., example="Rebirth Of The Immortal Venerable"), size: Optional[int] = 18):
     manga_data = pd.read_csv(file_dir + '/r_engine/manga_data/files/mangas_embedd.csv')
@@ -51,9 +54,13 @@ async def recomend_manga(title: str = Query(..., example="Rebirth Of The Immorta
     query_vector = vectorized_mangas.loc[vectorized_mangas['title']
                                          == title, 'vector'].iloc[0]
     result = db_manager.search("manga_set", query_vector, limit=size)
-    print(result)
+    print("::",result)
+    # Convert DataFrame to dictionary
+    result_dict = result.to_dict(orient='records')
+    
+    print(result_dict)
+    return result_dict
 
-    return result
 
 
 @app.get("/api/movies")
