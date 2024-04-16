@@ -3,7 +3,7 @@ FROM python:3.12-slim
 WORKDIR /code 
 
 COPY ./requirements.txt ./
-RUN apt-get update && apt-get install git -y && apt-get install curl -y
+RUN apt-get update && apt-get install git -y && apt-get install unzip curl -y
 
 RUN python -m venv venv
 RUN chmod +x ./venv/bin/activate && ./venv/bin/activate
