@@ -1,5 +1,5 @@
 import lancedb
-
+import os
 import numpy as np
 import pandas as pd
 
@@ -9,14 +9,18 @@ global table
 table = None
 
 
-def get_recommendations(title):
+# Find the directory in which the current script resides:
+file_dir = os.path.dirname(os.path.realpath(__file__))
+
+
+def get_recommendations(title, limit=5):
     pd_data = pd.DataFrame(data)
     # Table Search
     result = table.search(
-        pd_data[pd_data['title'] == title]["vector"].values[0]).limit(5).to_pandas()
+        pd_data[pd_data['title'] == title]["vector"].values[0]).limit(limit).to_pandas()
 
     # Get IMDB links
-    links = pd.read_csv('./files/links.csv', header=0,
+    links = pd.read_csv(file_dir + '/files/links.csv', header=0,
                         names=["movie id", "imdb id", "tmdb id"], converters={'imdb id': str})
 
     ret = result['title'].values.tolist()
@@ -32,7 +36,7 @@ def get_recommendations(title):
 if __name__ == "__main__":
 
     # Load and prepare data
-    ratings = pd.read_csv('./files/ratings.csv', header=None,
+    ratings = pd.read_csv(file_dir + '/files/ratings.csv', header=None,
                           names=["user id", "movie id", "rating", "timestamp"])
     ratings = ratings.drop(columns=['timestamp'])
     ratings = ratings.drop(0)
@@ -51,7 +55,7 @@ if __name__ == "__main__":
     print(vectors.shape)
 
     # Metadata
-    movies = pd.read_csv('./files/movies.csv', header=0,
+    movies = pd.read_csv(file_dir + '/files/movies.csv', header=0,
                          names=["movie id", "title", "genres"])
     movies = movies[movies['movie id'].isin(reviewmatrix.columns)]
 
@@ -63,7 +67,7 @@ if __name__ == "__main__":
 
     # Connect to LanceDB
 
-    db = lancedb.connect("./data/test-db")
+    db = lancedb.connect(file_dir + "/data/test-db")
     try:
         table = db.create_table("movie_set", data=data)
     except:

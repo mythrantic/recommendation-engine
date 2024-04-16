@@ -53,5 +53,5 @@ def test_main():
     except:
         main.table = db.open_table("movie_set")
 
-    print(get_recommendations("Moana (2016)"))
-    print(get_recommendations("Rogue One: A Star Wars Story (2016)"))
+    print(get_recommendations("Moana (2016)", 5))
+    print(get_recommendations("Rogue One: A Star Wars Story (2016)", 5))
