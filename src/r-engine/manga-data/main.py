@@ -1,73 +1,16 @@
-import lancedb
-
-import numpy as np
 import pandas as pd
+from .embed_data_api import MangaVectorizer, MangaDatabase
 
-global data
-data = []
-global table
-table = None
+manga_data = pd.read_csv('./files/mangas_embedd.csv')
+manga_data.drop_duplicates(subset=['title'], inplace=True)
+manga_data.fillna('', inplace=True)
 
+vectorizer = MangaVectorizer(manga_data)
+vectorized_mangas = vectorizer.vectorize_mangas(['title', 'description', 'authors', 'genres', 'rating', 'views', 'latestChapter', 'lastUpdated'])
 
-def get_recommendations(title):
-    pd_data = pd.DataFrame(data)
-    # Table Search
-    result = table.search(
-        pd_data[pd_data['title'] == title]["vector"].values[0]).limit(5).to_pandas()
+db_manager = MangaDatabase("./data/manga-db")
+table = db_manager.create_table("manga_set", data=vectorized_mangas.to_dict(orient='records'))
 
-    # Get IMDB links
-    links = pd.read_csv('./files/links.csv', header=0,
-                        names=["movie id", "imdb id", "tmdb id"], converters={'imdb id': str})
-
-    ret = result['title'].values.tolist()
-    # Loop to add links
-    for i in range(len(ret)):
-        link = links[links['movie id'] ==
-                     result['id'].values[i]]["imdb id"].values[0]
-        link = "https://www.imdb.com/title/tt" + link
-        ret[i] = [ret[i], link]
-    return ret
-
-
-if __name__ == "__main__":
-
-    # Load and prepare data
-    ratings = pd.read_csv('./files/ratings.csv', header=None,
-                          names=["user id", "movie id", "rating", "timestamp"])
-    ratings = ratings.drop(columns=['timestamp'])
-    ratings = ratings.drop(0)
-    ratings["rating"] = ratings["rating"].values.astype(np.float32)
-    ratings["user id"] = ratings["user id"].values.astype(np.int32)
-    ratings["movie id"] = ratings["movie id"].values.astype(np.int32)
-
-    reviewmatrix = ratings.pivot(
-        index="user id", columns="movie id", values="rating").fillna(0)
-
-    # SVD
-    matrix = reviewmatrix.values
-    u, s, vh = np.linalg.svd(matrix, full_matrices=False)
-
-    vectors = np.rot90(np.fliplr(vh))
-    print(vectors.shape)
-
-    # Metadata
-    movies = pd.read_csv('./files/movies.csv', header=0,
-                         names=["movie id", "title", "genres"])
-    movies = movies[movies['movie id'].isin(reviewmatrix.columns)]
-
-    data = []
-    for i in range(len(movies)):
-        data.append({"id": movies.iloc[i]["movie id"], "title": movies.iloc[i]
-                    ['title'], "vector": vectors[i], "genre": movies.iloc[i]['genres']})
-    print(pd.DataFrame(data))
-
-    # Connect to LanceDB
-
-    db = lancedb.connect("./data/test-db")
-    try:
-        table = db.create_table("movie_set", data=data)
-    except:
-        table = db.open_table("movie_set")
-
-    print(get_recommendations("Moana (2016)"))
-    print(get_recommendations("Rogue One: A Star Wars Story (2016)"))
+query_vector = vectorized_mangas.loc[vectorized_mangas['title'] == "Rebirth Of The Immortal Venerable", 'vector'].iloc[0]
+result = db_manager.search("manga_set", query_vector, limit=20)
+print(result)
