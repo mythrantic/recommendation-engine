@@ -12,6 +12,9 @@ import src.r_engine.movie_data.main
 import lancedb
 import numpy as np
 
+file_dir = os.path.dirname(os.path.realpath(__file__))
+
+
 load_dotenv()
 app = FastAPI()
 allowed_origins = os.getenv("ALLOWED_ORIGINS", "").split(",")
@@ -33,7 +36,7 @@ def read_root():
 
 @app.get("/api/manga")
 async def recomend_manga(title: str = Query(..., example="Rebirth Of The Immortal Venerable"), size: Optional[int] = 18):
-    manga_data = pd.read_csv('./r_engine/manga_data/files/mangas_embedd.csv')
+    manga_data = pd.read_csv(file_dir + '/r_engine/manga_data/files/mangas_embedd.csv')
     manga_data.drop_duplicates(subset=['title'], inplace=True)
     manga_data.fillna('', inplace=True)
 
@@ -41,7 +44,7 @@ async def recomend_manga(title: str = Query(..., example="Rebirth Of The Immorta
     vectorized_mangas = vectorizer.vectorize_mangas(
         ['title', 'description', 'authors', 'genres', 'rating', 'views', 'latestChapter', 'lastUpdated'])
 
-    db_manager = MangaDatabase("./data/manga-db")
+    db_manager = MangaDatabase(file_dir + "/r_engine/manga_data/data/manga-db")
     table = db_manager.create_table(
         "manga_set", data=vectorized_mangas.to_dict(orient='records'))
 
