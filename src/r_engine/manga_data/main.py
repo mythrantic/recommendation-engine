@@ -1,5 +1,5 @@
 import pandas as pd
-from .embed_data_api import MangaVectorizer, MangaDatabase
+from embed_data_api import MangaVectorizer, MangaDatabase
 
 manga_data = pd.read_csv('./files/mangas_embedd.csv')
 manga_data.drop_duplicates(subset=['title'], inplace=True)
