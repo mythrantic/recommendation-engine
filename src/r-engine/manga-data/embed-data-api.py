@@ -2,7 +2,8 @@ import lancedb
 import numpy as np
 import pandas as pd
 from hashlib import md5
-import re  # For extracting numeric values from strings
+import re
+import pyarrow as pa
 
 # Load manga data
 mangas = pd.read_csv('./files/mangas_embedd.csv')
@@ -10,6 +11,7 @@ mangas.drop_duplicates(subset=['title'], inplace=True)
 # Assuming 'mangas' is your DataFrame
 mangas.fillna({'title': '', 'description': '', 'authors': '', 'genres': '',
               'latestChapter': 'Chapter 0', 'rating': 0.0, 'views': 0}, inplace=True)
+
 
 # Convert columns to their expected types explicitly
 mangas['title'] = mangas['title'].astype(str)
@@ -84,28 +86,32 @@ def generate_vector(manga, attributes):
 attributes = ['title', 'authors', 'genres', 'rating']
 
 # Apply embedding generation
-mangas['vector'] = mangas.apply(
-    lambda row: generate_vector(row, attributes), axis=1)
+mangas['vector'] = mangas.apply(lambda row: np.array(generate_vector(row, attributes)), axis=1)
 
+
+print(mangas.head())
+print(mangas['vector'].dtype)
 # Prepare data for LanceDB
 data = [{
     "id": row['id'],
     "title": row['title'],
-    "vector": row['vector'].tolist(),
+    "vector": row['vector'].tobytes(),
 } for index, row in mangas.iterrows()]
 # Before adding data to LanceDB, ensure that vectors are correctly serialized
 for item in data:
     # Ensure 'vector' is a list of floats (or a similar numeric format)
     item['vector'] = item['vector'].tolist() if hasattr(
         item['vector'], 'tolist') else list(item['vector'])
-
-    # Example: Convert other fields to string if necessary
     item['title'] = str(item['title'])
+    item['authors'] = str(item['authors'])
+    item['genres'] = str(item['genres'])
+    item['rating'] = int(item['rating'])
     # Repeat for other fields as needed based on your schema requirements
 # Before creating the table, log the data types of the first item (for debugging)
 if data:  # Ensure data is not empty
     for sample_item in data:
-        print(f"sample_item: {sample_item['title']}")
+        pass
+        # print(f"sample_item: {sample_item['title']}")
 
 
 # Then proceed to initialize and populate the LanceDB table
