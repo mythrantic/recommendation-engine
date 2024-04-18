@@ -2,13 +2,13 @@ from typing import Optional, List
 
 import debugpy
 from prometheus_fastapi_instrumentator import Instrumentator
-from fastapi import FastAPI, Query
+from fastapi import FastAPI, Query, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from dotenv import load_dotenv
 import os
 import pandas as pd
-from .r_engine.manga_data.embed_data_api import MangaVectorizer, MangaDatabase
+from .r_engine.manga_data.main import manga_recommendations
 from .r_engine.movie_data.main import get_recommendations, data
 import src.r_engine.movie_data.main
 import lancedb
@@ -36,31 +36,13 @@ def read_root():
     return {"Hello": "World ass wiper"}
 
 
-
 @app.get("/api/manga")
 async def recomend_manga(title: str = Query(..., example="Rebirth Of The Immortal Venerable"), size: Optional[int] = 18):
-    manga_data = pd.read_csv(file_dir + '/r_engine/manga_data/files/mangas_embedd.csv')
-    manga_data.drop_duplicates(subset=['title'], inplace=True)
-    manga_data.fillna('', inplace=True)
-
-    vectorizer = MangaVectorizer(manga_data)
-    vectorized_mangas = vectorizer.vectorize_mangas(
-        ['title', 'description', 'authors', 'genres', 'rating', 'views', 'latestChapter', 'lastUpdated'])
-
-    db_manager = MangaDatabase(file_dir + "/r_engine/manga_data/data/manga-db")
-    table = db_manager.create_table(
-        "manga_set", data=vectorized_mangas.to_dict(orient='records'))
-
-    query_vector = vectorized_mangas.loc[vectorized_mangas['title']
-                                         == title, 'vector'].iloc[0]
-    result = db_manager.search("manga_set", query_vector, limit=size)
-    print("::",result)
-    # Convert DataFrame to dictionary
-    result_dict = result.to_dict(orient='records')
-    
-    print(result_dict)
-    return result_dict
-
+    try:
+        results = manga_recommendations(title=title, size=size)
+        return results
+    except IndexError:
+        raise HTTPException(status_code=404, detail="Manga not found in our db. Please provide a valid title.")
 
 
 @app.get("/api/movies")
@@ -97,12 +79,13 @@ async def recomend_movie(title: str = Query(..., example="Rogue One: A Star Wars
 
     db = lancedb.connect("src/r_engine/movie_data/data/test-db")
     try:
-        src.r_engine.movie_data.main.table = db.create_table("movie_set", data=data)
+        src.r_engine.movie_data.main.table = db.create_table(
+            "movie_set", data=data)
     except:
         src.r_engine.movie_data.main.table = db.open_table("movie_set")
 
     results = get_recommendations(title, size)
-    
+
     return results
 
 Instrumentator().instrument(app).expose(app)
