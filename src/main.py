@@ -2,7 +2,7 @@ from typing import Optional, List
 
 import debugpy
 from prometheus_fastapi_instrumentator import Instrumentator
-from fastapi import FastAPI, Query
+from fastapi import FastAPI, Query, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from dotenv import load_dotenv
@@ -38,10 +38,11 @@ def read_root():
 
 @app.get("/api/manga")
 async def recomend_manga(title: str = Query(..., example="Rebirth Of The Immortal Venerable"), size: Optional[int] = 18):
-    results = manga_recommendations(title=title, size=size)
-    print("results", results)
-    return results
-
+    try:
+        results = manga_recommendations(title=title, size=size)
+        return results
+    except IndexError:
+        raise HTTPException(status_code=404, detail="Manga not found in our db. Please provide a valid title.")
 
 
 @app.get("/api/movies")
