@@ -1,5 +1,4 @@
 from typing import Optional, List
-
 import debugpy
 from prometheus_fastapi_instrumentator import Instrumentator
 from fastapi import FastAPI, Query, HTTPException
